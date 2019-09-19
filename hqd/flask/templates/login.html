@@ -1,9 +1,15 @@
-{% include 'header.html' %}
-{% if message %}
-<p><strong>Error</strong>: {{ message }}</p>
-{% endif %}
-<form method="POST">
-    <input name="username" placeholder="username">
-    <input name="password" placeholder="password" type="password">
-    <input type="submit" value="Login">
-</form>
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        {% include 'header.html' %}
+        {% if message %}
+        <p><strong>Error</strong>: {{ message }}</p>
+        {% endif %}
+        <form method="POST">
+            <input name="username" placeholder="username">
+            <input name="password" placeholder="password" type="password">
+            <input type="submit" value="Login">
+        </form>
+    </body>
+</html>
