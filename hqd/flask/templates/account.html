@@ -2,7 +2,10 @@
 <html>
     <head>
         {% include 'header.html' %}
-        <title>Account</title>
+        <meta charset="utf-8">
+        <title>Login</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
     </head>
     <body>
         {% with messages = get_flashed_messages() %}

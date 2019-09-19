@@ -2,11 +2,12 @@ from flask import *
 from flask_mail import *
 from random import *
 from email_validator import validate_email, EmailNotValidError
-
+import hqd.flask.database as mysql_db
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'test secret key'
 
+# CONFIGURATION
 # Flask-mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -18,35 +19,74 @@ app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
 otp = randint(000000, 999999)
 
-# Users
-users = {
-    'admin': 'admin',
-    'hqd': 'hqd',
-}
 
-
+# IMPLEMENTATION
 @app.route('/')
 def main():
     flash("")
-    return render_template('home.html')
-
-
-@app.route('/login')
-def login_form():
     return render_template('login.html')
+
+
+@app.route('/home')
+def home():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # User is loggedin show them the home page
+        return render_template('home.html', username=session['username'])
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
 
 
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
-    if username and password and username in users and users[username] == password:
+    db = mysql_db.Database()
+
+    if db.verify_user(username, password) is True:
         flash("You are successfully logged in")
+        # Create session data, we can access this data in other routes
         session['logged_in'] = True
+        session['username'] = username
+        # Redirect to account page
         return redirect(url_for('account'))
 
-    message = "Wrong username/password"
-    return render_template('login.html', message=message)
+    msg = 'Incorrect username/password!'
+    return render_template('login.html', msg=msg)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    # Output message if something goes wrong...
+    msg = ''
+    # Check if "username", "password" and "email" POST requests exist (user submitted form)
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+        # Create variables for easy access
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+
+        # Check if account exists using MySQL
+        db = mysql_db.Database()
+        msg = db.add_user(username, password, email)
+
+    elif request.method == 'POST':
+        # Form is empty... (no POST data)
+        msg = 'Please fill out the form!'
+    # Show registration form with message (if any)
+    return render_template('register.html', msg=msg)
+
+
+@app.route('/logout')
+def logout():
+    if not session.get('logged_in'):
+        return "Not logged in"
+    else:
+        # Remove session data, this will log the user out
+        session.pop('logged_in', None)
+        session.pop('username', None)
+        # Redirect to login page
+    return render_template('login.html')
 
 
 @app.route('/account')
@@ -76,20 +116,6 @@ def validate():
     if otp == int(user_otp):
         return "<h3>Email verified successfully</h3>"
     return "<h3>failure</h3>"
-
-
-@app.route('/logout')
-def logout():
-    if not session.get('logged_in'):
-        return "Not logged in"
-    else:
-        session['logged_in'] = False
-    return render_template('logout.html')
-
-
-@app.route('/register')
-def register():
-    return render_template('register.html')
 
 
 @app.route('/success', methods=['POST', 'GET'])

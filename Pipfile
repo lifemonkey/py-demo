@@ -13,6 +13,7 @@ flashtext = "*"
 flask = "*"
 flask-mail = "*"
 email-validator = "*"
+pymysql = "*"
 
 [requires]
 python_version = "3.7"
