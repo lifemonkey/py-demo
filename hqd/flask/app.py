@@ -21,37 +21,35 @@ otp = randint(000000, 999999)
 
 
 # IMPLEMENTATION
-@app.route('/')
-def main():
-    flash("")
-    return render_template('login.html')
-
-
 @app.route('/home')
 def home():
-    # Check if user is loggedin
-    if 'loggedin' in session:
-        # User is loggedin show them the home page
+    # Check if user is logged_in
+    if 'logged_in' in session:
+        # User is logged_in show them the home page
         return render_template('home.html', username=session['username'])
-    # User is not loggedin redirect to login page
+    # User is not logged_in redirect to login page
     return redirect(url_for('login'))
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
     db = mysql_db.Database()
+    user_id = db.verify_user(username, password)
+    msg = ''
 
-    if db.verify_user(username, password) is True:
+    if user_id > 0:
         flash("You are successfully logged in")
         # Create session data, we can access this data in other routes
         session['logged_in'] = True
+        session['id'] = user_id
         session['username'] = username
         # Redirect to account page
-        return redirect(url_for('account'))
-
-    msg = 'Incorrect username/password!'
+        return redirect(url_for('home'))
+    elif username is not None and password is not None:
+        msg = 'Incorrect username/password!'
     return render_template('login.html', msg=msg)
 
 
@@ -79,21 +77,24 @@ def register():
 
 @app.route('/logout')
 def logout():
-    if not session.get('logged_in'):
-        return "Not logged in"
-    else:
-        # Remove session data, this will log the user out
-        session.pop('logged_in', None)
-        session.pop('username', None)
-        # Redirect to login page
-    return render_template('login.html')
+    # Remove session data, this will log the user out
+    session.pop('logged_in', None)
+    session.pop('id', None)
+    session.pop('username', None)
+    # Redirect to login page
+    return redirect(url_for('login'))
 
 
-@app.route('/account')
-def account():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    return render_template('account.html')
+@app.route('/profile')
+def profile():
+    # Check if user is loggedin
+    if 'logged_in' in session:
+        db = mysql_db.Database()
+        user = db.fetch_user(session['id'], session['username'])
+        # Show the profile page with account info
+        return render_template('profile.html', user=user)
+    # User is not logged_in redirect to login page
+    return redirect(url_for('login'))
 
 
 @app.route('/verify', methods=['POST'])

@@ -22,21 +22,21 @@ class Database:
         result = self.cursor.fetchall()
         return result
 
-    def fetch_user(self, user_name, password):
-        self.cursor.execute("SELECT * FROM Users WHERE user = %s AND password = %s", (user_name, password))
+    def fetch_user(self, id, user_name):
+        self.cursor.execute("SELECT * FROM Users WHERE id = %s AND user = %s", (id, user_name))
         result = self.cursor.fetchone()
         return result
 
     def verify_user(self, user_name, password):
-        user = self.fetch_user(user_name, password)
+        self.cursor.execute("SELECT * FROM Users WHERE user = %s AND password = %s", (user_name, password))
+        user = self.cursor.fetchone()
         if user is not None:
-            return True
-        return False
+            return user['id']
+        return 0
 
     def add_user(self, username, password, email):
         self.cursor.execute('SELECT * FROM Users WHERE user = %s', username)
         account = self.cursor.fetchone()
-        msg = ''
 
         # If account exists show error and validation checks
         if account:
